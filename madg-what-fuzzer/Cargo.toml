@@ -1,0 +1,26 @@
+
+[package]
+name = "madg-what-fuzzer"
+version = "0.1.0"
+authors = ["Rafael Bachmann <mediumendian@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+dlopen = "0.1.5"
+dlopen_derive = "*"
+lazy_static = "0.2.8"
+regex = "1"
+clap = "2.32.0"
+
+[target.'cfg(windows)'.dependencies]
+winapi = "0.2"
+kernel32-sys = "0.2"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2.29"
+
+[dev-dependencies]
+const-cstr = "0.1"
+libc = "0.2.29"
+regex = "0.2"
+
