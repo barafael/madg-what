@@ -5,12 +5,15 @@ extern crate dlopen;
 extern crate dlopen_derive;
 use dlopen::symbor::Library;
 
+use std::fs;
+use std::path::Path;
+
 extern crate libc;
 use libc::c_float;
 
-use dlopen::utils::{PLATFORM_FILE_EXTENSION, PLATFORM_FILE_PREFIX};
-use std::env;
-use std::path::PathBuf;
+use dlopen::utils::PLATFORM_FILE_EXTENSION;
+
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
@@ -39,9 +42,49 @@ fn main() {
                 .takes_value(true)
                 .min_values(1)
                 .short("f"),
+        ).arg(
+            Arg::with_name("dir")
+                .takes_value(true)
+                .min_values(1)
+                .short("d"),
         ).get_matches();
 
-    let files: Vec<_> = matches.values_of("file").unwrap().collect();
+    let mut files = HashSet::<String>::new();
+
+    if let Some(f) = matches.values_of("file") {
+        for path in f.collect::<Vec<&str>>().iter() {
+            if Path::new(path).exists() {
+                files.insert(path.to_string());
+            }
+        }
+    }
+
+    if let Some(d) = matches.values_of("dir") {
+        for dir in d.collect::<Vec<&str>>().iter() {
+            match fs::read_dir(dir) {
+                Ok(entries) => {
+                    for entry in entries {
+                        match entry {
+                            Ok(dir_entry) => {
+                                let file_path = dir_entry.path();
+                                if file_path.exists() && file_path.is_file() {
+                                    file_path.extension().map(|ext| {
+                                        if ext == PLATFORM_FILE_EXTENSION {
+                                            if let Some(s) = file_path.to_str() {
+                                                files.insert(String::from(s));
+                                            }
+                                        }
+                                    });
+                                }
+                            },
+                            Err(e) => eprintln!("{}", e),
+                        }
+                    }
+                }
+                Err(e) => eprintln!("{}", e),
+            }
+        }
+    }
 
     println!("{:?}", files);
 
@@ -76,27 +119,3 @@ fn main() {
     println!("{:?}", unsafe { fun(acc, gyro, mag) });
 }
 
-//Rust when building dependencies adds some weird numbers to file names
-// find the file using this pattern:
-//const FILE_PATTERN: &str = concat!(PLATFORM_FILE_PREFIX, "example.*\\.", PLATFORM_FILE_EXTENSION);
-
-pub fn example_lib_path() -> PathBuf {
-    let file_pattern = format!(
-        r"{}example.*\.{}",
-        PLATFORM_FILE_PREFIX, PLATFORM_FILE_EXTENSION
-    );
-    let file_regex = regex::Regex::new(file_pattern.as_ref()).unwrap();
-    //build path to the example library that covers most cases
-    let mut lib_path = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
-    println!("Library path: {}", lib_path.to_str().unwrap());
-    lib_path.extend(["target", "debug", "deps"].iter());
-    println!("Library path: {}", lib_path.to_str().unwrap());
-    let entry = lib_path.read_dir().unwrap().find(|e| match *e {
-        Ok(ref entry) => file_regex.is_match(entry.file_name().to_str().unwrap()),
-        Err(ref err) => panic!("Could not read cargo debug directory: {}", err),
-    });
-    println!("Library path: {}", lib_path.to_str().unwrap());
-    lib_path.push(entry.unwrap().unwrap().file_name());
-    println!("Library path: {}", lib_path.to_str().unwrap());
-    lib_path
-}
