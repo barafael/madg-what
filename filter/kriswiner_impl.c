@@ -8,6 +8,8 @@ void set_deltat(float _deltat) {
     deltat = _deltat;
 }
 
+float q[4];
+
 void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
 
 quaternion_t madgwick_filter(axis_t acc, axis_t gyro, axis_t mag) {
@@ -32,14 +34,7 @@ quaternion_t madgwick_filter(axis_t acc, axis_t gyro, axis_t mag) {
 
     MadgwickQuaternionUpdate(ax, ay, az, gx, gy, gz, mx, my, mz);
 
-    quaternion_t ret;
-
-    ret.a = q[0];
-    ret.b = q[1];
-    ret.c = q[2];
-    ret.d = q[3];
-
-    return ret;
+    return quat_from_array(q);
 }
 
 // Implementation of Sebastian Madgwick's "...efficient orientation filter for... inertial/magnetic sensor arrays"
