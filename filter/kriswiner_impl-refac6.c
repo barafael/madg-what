@@ -10,17 +10,13 @@ void set_deltat(float _deltat) {
     deltat = _deltat;
 }
 
-inline bool normalize_quat(quaternion_t *quat) {
+inline void normalize_quat(quaternion_t *quat) {
     float norm = sqrtf(quat->a * quat->a + quat->b * quat->b + quat->c * quat->c + quat->d * quat->d);
-    if (norm == 0.0f) {
-        return false;
-    }
     norm = 1.0f / norm;
     quat->a *= norm;
     quat->b *= norm;
     quat->c *= norm;
     quat->d *= norm;
-    return true;
 }
 
 inline void scalar_quat(float f, quaternion_t *quat) {
@@ -136,9 +132,7 @@ quaternion_t madgwick_filter(vec3_t acc, vec3_t gyro, vec3_t mag) {
          (-_2bx * quat.a + _2bz * quat.c) * (_2bx * (q2q3 - q1q4) + _2bz * (q1q2 + q3q4) - mag.y) +
          _2bx * quat.b * (_2bx * (q1q3 + q2q4) + _2bz * (0.5f - q2q2 - q3q3) - mag.z);
     // normalise step magnitude
-    if (!normalize_quat(&s)) {
-        return quat;
-    }
+    normalize_quat(&s);
 
     // Compute rate of change of quaternion
     quaternion_t qdot = differentiate_quat(gyro, &s);
@@ -149,6 +143,6 @@ quaternion_t madgwick_filter(vec3_t acc, vec3_t gyro, vec3_t mag) {
     add_quat(&quat, qdot);
 
     normalize_quat(&quat);
-    
+
     return quat;
 }
