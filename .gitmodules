@@ -1,0 +1,3 @@
+[submodule "madg-what-fuzzer/mutate3.py"]
+	path = madg-what-fuzzer/mutate3.py
+	url = https://github.com/barafael/mutate3.py
