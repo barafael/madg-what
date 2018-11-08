@@ -1,9 +1,13 @@
 CFLAGS = -Wall -ansi -pedantic -std=c11
 
-c_files := $(wildcard *.c)
-objects := $(patsubst %.c,lib%.so,$(wildcard *.c))
+.PHONY: all clean
 
-all: $(objects)
+c_files := $(wildcard *.c)
+objects := $(patsubst %.c,lib%.so,$(c_files))
+
+all: shared_obj
+
+shared_obj: $(objects)
 	gcc -shared -fPIC -lm $(CFLAGS) $(c_files) -c
 
 lib%.so: %.c
