@@ -89,27 +89,32 @@ fn main() {
 
     if let Some(d) = matches.values_of("dir") {
         for dir in d.collect::<Vec<&str>>().iter() {
-            match fs::read_dir(dir) {
-                Ok(entries) => {
-                    for entry in entries {
-                        match entry {
-                            Ok(dir_entry) => {
-                                let file_path = dir_entry.path();
-                                if file_path.exists() && file_path.is_file() {
-                                    file_path.extension().map(|ext| {
-                                        if ext == PLATFORM_FILE_EXTENSION {
-                                            if let Some(s) = file_path.to_str() {
-                                                files.insert(String::from(s));
-                                            }
-                                        }
-                                    });
-                                }
-                            },
-                            Err(e) => eprintln!("{}", e),
+            let entries = match fs::read_dir(dir) {
+                Ok(entries) => entries,
+                Err(e) => {
+                    eprintln!("{}", e);
+                    continue;
+                }
+            };
+            for entry in entries {
+                let dir_entry = match entry {
+                    Ok(entry) => entry,
+                    Err(e) => {
+                        eprintln!("{}", e);
+                        continue;
+                    }
+                };
+                let file_path = dir_entry.path();
+                if !(file_path.exists() && file_path.is_file()) {
+                    continue;
+                }
+                file_path.extension().map(|ext| {
+                    if ext == PLATFORM_FILE_EXTENSION {
+                        if let Some(s) = file_path.to_str() {
+                            files.insert(String::from(s));
                         }
                     }
-                }
-                Err(e) => eprintln!("{}", e),
+                });
             }
         }
     }
