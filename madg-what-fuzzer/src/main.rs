@@ -3,6 +3,7 @@ use clap::{App, Arg};
 
 extern crate dlopen;
 extern crate dlopen_derive;
+extern crate rand;
 use dlopen::symbor::Library;
 
 use std::fs;
@@ -14,6 +15,8 @@ use libc::c_float;
 use dlopen::utils::PLATFORM_FILE_EXTENSION;
 
 use std::collections::HashSet;
+
+use rand::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
@@ -30,6 +33,31 @@ struct Axis {
     pub x: c_float,
     pub y: c_float,
     pub z: c_float,
+}
+
+trait RandomGenerate {
+    fn generate() -> Self;
+}
+
+impl RandomGenerate for Axis {
+    fn generate() -> Self {
+        let mut rng = thread_rng();
+        let x = (rng.gen::<f32>() * 10.0) as c_float;
+        let y = (rng.gen::<f32>() * 10.0) as c_float;
+        let z = (rng.gen::<f32>() * 10.0) as c_float;
+        Axis { x, y, z }
+    }
+}
+
+impl RandomGenerate for Quaternion {
+    fn generate() -> Self {
+        let mut rng = thread_rng();
+        let a = (rng.gen::<f32>() * 10.0) as c_float;
+        let b = (rng.gen::<f32>() * 10.0) as c_float;
+        let c = (rng.gen::<f32>() * 10.0) as c_float;
+        let d = (rng.gen::<f32>() * 10.0) as c_float;
+        Quaternion { a, b, c, d }
+    }
 }
 
 fn main() {
@@ -118,4 +146,3 @@ fn main() {
     };
     println!("{:?}", unsafe { fun(acc, gyro, mag) });
 }
-
