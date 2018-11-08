@@ -8,7 +8,7 @@ void set_deltat(float _deltat) {
     deltat = _deltat;
 }
 
-quaternion_t madgwick_filter(axis_t acc, axis_t gyro, axis_t mag) {
+quaternion_t madgwick_filter(vec3_t acc, vec3_t gyro, vec3_t mag) {
     set_deltat(0.01);
 
     quat.a = 1.0f;

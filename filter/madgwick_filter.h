@@ -15,7 +15,7 @@ typedef struct {
     float x;
     float y;
     float z;
-} axis_t;
+} vec3_t;
 
 quaternion_t quat_from_array(float *q) {
     quaternion_t quat;
@@ -41,6 +41,6 @@ void set_beta(float beta);
 void set_deltat(float deltat);
 void set_quaternion(quaternion_t quat);
 
-quaternion_t madgwick_filter(axis_t acc, axis_t gyro, axis_t mag);
+quaternion_t madgwick_filter(vec3_t acc, vec3_t gyro, vec3_t mag);
 
 #endif // MADGWICK_FILTER_H

@@ -8,7 +8,7 @@ void set_deltat(float _deltat) {
     deltat = _deltat;
 }
 
-float inline magnitude3(axis_t vector) {
+float inline magnitude3(vec3_t vector) {
     return sqrtf(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
 }
 
@@ -20,7 +20,7 @@ float inline magnitude_quat(quaternion_t quat) {
     return sqrtf(quat.a * quat.a + quat.b * quat.b + quat.c * quat.c + quat.d * quat.d);
 }
 
-quaternion_t differentiate_quat(axis_t gyro, float a, float b, float c, float d) {
+quaternion_t differentiate_quat(vec3_t gyro, float a, float b, float c, float d) {
     quaternion_t dot;
     dot.a = 0.5f * (-b * gyro.x - c * gyro.y - d * gyro.z) - beta * a;
     dot.b = 0.5f * (a  * gyro.x + c * gyro.z - d * gyro.y) - beta * b;
@@ -29,7 +29,7 @@ quaternion_t differentiate_quat(axis_t gyro, float a, float b, float c, float d)
     return dot;
 }
 
-quaternion_t madgwick_filter(axis_t acc, axis_t gyro, axis_t mag) {
+quaternion_t madgwick_filter(vec3_t acc, vec3_t gyro, vec3_t mag) {
     set_deltat(0.01);
 
     quat.a = 1.0f;

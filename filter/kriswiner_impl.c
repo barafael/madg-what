@@ -12,7 +12,7 @@ float q[4];
 
 void MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz);
 
-quaternion_t madgwick_filter(axis_t acc, axis_t gyro, axis_t mag) {
+quaternion_t madgwick_filter(vec3_t acc, vec3_t gyro, vec3_t mag) {
     set_deltat(0.01);
 
     float ax = acc.x;
