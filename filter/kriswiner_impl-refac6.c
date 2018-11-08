@@ -62,7 +62,6 @@ quaternion_t madgwick_filter(vec3_t acc, vec3_t gyro, vec3_t mag) {
     quat.c = 0.0f;
     quat.d = 0.0f;
 
-    float norm;
     float hx, hy, _2bx, _2bz;
     quaternion_t s;
 
