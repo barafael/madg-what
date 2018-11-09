@@ -10,7 +10,7 @@ void set_deltat(float _deltat) {
     deltat = _deltat;
 }
 
-inline bool normalize_quat(quaternion_t *quat) {
+bool normalize_quat(quaternion_t *quat) {
     float norm = sqrtf(quat->a * quat->a + quat->b * quat->b + quat->c * quat->c + quat->d * quat->d);
     if (norm == 0.0f) {
         return false;
@@ -23,21 +23,21 @@ inline bool normalize_quat(quaternion_t *quat) {
     return true;
 }
 
-inline void scalar_quat(float f, quaternion_t *quat) {
+void scalar_quat(float f, quaternion_t *quat) {
     quat->a *= f;
     quat->b *= f;
     quat->c *= f;
     quat->d *= f;
 }
 
-inline void add_quat(quaternion_t *q1, quaternion_t q2) {
+void add_quat(quaternion_t *q1, quaternion_t q2) {
     q1->a += q2.a;
     q1->b += q2.b;
     q1->c += q2.c;
     q1->d += q2.d;
 }
 
-inline bool normalize_vec3(vec3_t *vector) {
+bool normalize_vec3(vec3_t *vector) {
     float norm = sqrtf(vector->x * vector->x + vector->y * vector->y + vector->z * vector->z);
     if (norm == 0.0f) {
         return false;

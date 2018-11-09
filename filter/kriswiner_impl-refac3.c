@@ -8,15 +8,15 @@ void set_deltat(float _deltat) {
     deltat = _deltat;
 }
 
-float inline magnitude3(vec3_t vector) {
+float magnitude3(vec3_t vector) {
     return sqrtf(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
 }
 
-float inline magnitude4(float a, float b, float c, float d) {
+float magnitude4(float a, float b, float c, float d) {
     return sqrtf(a * a + b * b + c * c + d * d);
 }
 
-float inline magnitude_quat(quaternion_t quat) {
+float magnitude_quat(quaternion_t quat) {
     return sqrtf(quat.a * quat.a + quat.b * quat.b + quat.c * quat.c + quat.d * quat.d);
 }
 
