@@ -9,6 +9,8 @@ use dlopen::symbor::Library;
 use std::fs;
 use std::path::Path;
 
+use std::fmt;
+
 extern crate libc;
 use libc::c_float;
 
@@ -35,6 +37,105 @@ struct Axis {
     pub z: c_float,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct Measurement {
+    pub acc: Axis,
+    pub gyro: Axis,
+    pub mag: Axis,
+}
+
+struct FilterLib {
+    filename: String,
+    handle: Library,
+}
+
+#[derive(Debug)]
+struct TestBench {
+    libs: Vec<FilterLib>,
+}
+
+#[derive(Debug)]
+struct TestRun {
+    measurement: Measurement,
+    results: Vec<(String, Option<Quaternion>)>,
+}
+
+trait MadgwickFilter {
+    fn madgwick_filter(&self, measurement: Measurement) -> Option<Quaternion>;
+    fn set_beta(&self, beta: f32);
+    fn set_deltat(&self, deltat: f32);
+}
+
+impl MadgwickFilter for FilterLib {
+    fn madgwick_filter(&self, measurement: Measurement) -> Option<Quaternion> {
+        let sym = unsafe {
+            self.handle
+                .symbol::<unsafe extern "C" fn(acc: Axis, gyro: Axis, mag: Axis) -> Quaternion>(
+                    "madgwick_filter",
+                )
+        };
+        match sym {
+            Ok(filter) => {
+                Some(unsafe { filter(measurement.acc, measurement.gyro, measurement.mag) })
+            }
+            Err(e) => {
+                eprintln!("{}", e);
+                None
+            }
+        }
+    }
+
+    fn set_beta(&self, beta: f32) {
+        let sym = unsafe {
+            self.handle
+                .symbol::<unsafe extern "C" fn(c_float)>("set_beta")
+        };
+        match sym {
+            Ok(set) => {
+                unsafe { set(beta as c_float) };
+            }
+            Err(e) => {
+                eprintln!("{}", e);
+            }
+        }
+    }
+
+    fn set_deltat(&self, deltat: f32) {
+        let sym = unsafe {
+            self.handle
+                .symbol::<unsafe extern "C" fn(c_float)>("set_deltat")
+        };
+        match sym {
+            Ok(set) => {
+                unsafe { set(deltat as c_float) };
+            }
+            Err(e) => {
+                eprintln!("{}", e);
+            }
+        }
+    }
+}
+
+impl fmt::Debug for FilterLib {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Filename: {}", self.filename)
+    }
+}
+
+impl TestBench {
+    pub fn run(&self, measurement: Measurement) -> TestRun {
+        let mut result = TestRun {
+            measurement,
+            results: Vec::new(),
+        };
+        for lib in self.libs.iter() {
+            let quat = lib.madgwick_filter(measurement);
+            result.results.push((lib.filename.clone(), quat));
+        }
+        result
+    }
+}
+
 trait RandomGenerate {
     fn generate() -> Self;
 }
@@ -46,6 +147,16 @@ impl RandomGenerate for Axis {
         let y = (rng.gen::<f32>() * 10.0) as c_float;
         let z = (rng.gen::<f32>() * 10.0) as c_float;
         Axis { x, y, z }
+    }
+}
+
+impl RandomGenerate for Measurement {
+    fn generate() -> Self {
+        let acc = Axis::generate();
+        let gyro = Axis::generate();
+        let mag = Axis::generate();
+
+        Measurement { acc, gyro, mag }
     }
 }
 
@@ -70,12 +181,14 @@ fn main() {
                 .takes_value(true)
                 .min_values(1)
                 .short("f"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("dir")
                 .takes_value(true)
                 .min_values(1)
                 .short("d"),
-        ).get_matches();
+        )
+        .get_matches();
 
     let mut files = HashSet::<String>::new();
 
@@ -119,35 +232,25 @@ fn main() {
         }
     }
 
-    println!("{:?}", files);
+    println!("{:#?}", files);
 
-    let mut handles = Vec::new();
+    let mut test_bench = TestBench { libs: Vec::new() };
 
     for filename in files {
-        match Library::open(filename) {
-            Ok(h) => handles.push(h),
-            Err(e) => println!("{}", e),
+        let lib = Library::open(&filename);
+        match lib {
+            Err(e) => eprintln!("{}", e),
+            Ok(handle) => {
+                test_bench.libs.push(FilterLib { filename, handle });
+            }
         }
     }
-    let fun = unsafe {
-        handles[0].symbol::<unsafe extern "C" fn(acc: Axis, gyro: Axis, mag: Axis) -> Quaternion>(
-            "madgwick_filter",
-        )
-    }.unwrap();
-    let acc = Axis {
-        x: 1.0,
-        y: 2.0,
-        z: 3.0,
-    };
-    let gyro = Axis {
-        x: 4.0,
-        y: 5.0,
-        z: 6.0,
-    };
-    let mag = Axis {
-        x: 7.0,
-        y: 8.0,
-        z: 9.0,
-    };
-    println!("{:?}", unsafe { fun(acc, gyro, mag) });
+
+    println!("{:#?}", test_bench);
+
+    let measurement = Measurement::generate();
+
+    let result = test_bench.run(measurement);
+
+    println!("{:#?}", result);
 }
