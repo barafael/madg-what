@@ -3,7 +3,6 @@ use clap::{App, Arg};
 
 extern crate dlopen;
 extern crate dlopen_derive;
-extern crate rand;
 use dlopen::symbor::Library;
 
 use std::fs;
@@ -18,31 +17,9 @@ use dlopen::utils::PLATFORM_FILE_EXTENSION;
 
 use std::collections::HashSet;
 
-use rand::prelude::*;
-
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-struct Quaternion {
-    pub a: c_float,
-    pub b: c_float,
-    pub c: c_float,
-    pub d: c_float,
-}
-
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-struct Axis {
-    pub x: c_float,
-    pub y: c_float,
-    pub z: c_float,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct Measurement {
-    pub acc: Axis,
-    pub gyro: Axis,
-    pub mag: Axis,
-}
+mod quaternion;
+use crate::quaternion::{Measurement, Quaternion, Axis};
+use crate::quaternion::{RandomGenerate};
 
 struct FilterLib {
     filename: String,
@@ -136,41 +113,6 @@ impl TestBench {
     }
 }
 
-trait RandomGenerate {
-    fn generate() -> Self;
-}
-
-impl RandomGenerate for Axis {
-    fn generate() -> Self {
-        let mut rng = thread_rng();
-        let x = (rng.gen::<f32>() * 10.0) as c_float;
-        let y = (rng.gen::<f32>() * 10.0) as c_float;
-        let z = (rng.gen::<f32>() * 10.0) as c_float;
-        Axis { x, y, z }
-    }
-}
-
-impl RandomGenerate for Measurement {
-    fn generate() -> Self {
-        let acc = Axis::generate();
-        let gyro = Axis::generate();
-        let mag = Axis::generate();
-
-        Measurement { acc, gyro, mag }
-    }
-}
-
-impl RandomGenerate for Quaternion {
-    fn generate() -> Self {
-        let mut rng = thread_rng();
-        let a = (rng.gen::<f32>() * 10.0) as c_float;
-        let b = (rng.gen::<f32>() * 10.0) as c_float;
-        let c = (rng.gen::<f32>() * 10.0) as c_float;
-        let d = (rng.gen::<f32>() * 10.0) as c_float;
-        Quaternion { a, b, c, d }
-    }
-}
-
 fn main() {
     let matches = App::new("madg-what-fuzzer")
         .version("0.1")
@@ -221,13 +163,13 @@ fn main() {
                 if !(file_path.exists() && file_path.is_file()) {
                     continue;
                 }
-                file_path.extension().map(|ext| {
+                if let Some(ext) = file_path.extension() {
                     if ext == PLATFORM_FILE_EXTENSION {
                         if let Some(s) = file_path.to_str() {
                             files.insert(String::from(s));
                         }
                     }
-                });
+                };
             }
         }
     }
@@ -250,7 +192,11 @@ fn main() {
 
     let measurement = Measurement::generate();
 
-    let result = test_bench.run(measurement);
+    let mut result = test_bench.run(measurement);
+
+    result.results.sort_by(|a, b| {
+        a.0.cmp(&b.0)
+    });
 
     println!("{:#?}", result);
 }
