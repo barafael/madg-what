@@ -1,3 +1,5 @@
+all: filters
+
 filters:
 	cd filter && $(MAKE) -k all
 
