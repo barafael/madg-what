@@ -1,3 +1,6 @@
 [submodule "mutate3.py"]
 	path = mutate3.py
 	url = https://github.com/barafael/mutate3.py
+[submodule "madgwick-rs"]
+	path = madgwick-rs
+	url = https://github.com/barafael/madgwick-rs
